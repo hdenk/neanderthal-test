@@ -1,0 +1,215 @@
+;; gorilla-repl.fileformat = 1
+
+;; **
+;;; # Coding The Matrix
+;;; 
+;;; Links:
+;;; 
+;;; [codingthematrix.com](http://codingthematrix.com/)
+;;; 
+;;; [https://github.com/uncomplicate/neanderthal/tree/master/test/uncomplicate/neanderthal/examples/codingthematrix](https://github.com/uncomplicate/neanderthal/tree/master/test/uncomplicate/neanderthal/examples/codingthematrix)
+;;; 
+;;; The course has been taught at Brown University since 2008, and is being taught in Fall 2017. Slides from past editions of the Brown University course are available [here](http://codingthematrix.com/#slides).
+;;; A shortened version has been taught through [Coursera](http://www.coursera.org/course/matrix/).  The aim of this course is to provide students interested in computer science an introduction to vectors and matrices and their use in CS applications.
+;;; 
+;;; The course is driven by applications from areas chosen from among: computer vision, cryptography, game theory, graphics, information retrieval and web search, and machine learning.
+;; **
+
+;; @@
+(ns neanderthal-test.coding-the-matrix
+  (:require [uncomplicate.neanderthal
+             [core :refer :all]
+             [native :refer :all]]
+            [clojure.test :refer [deftest testing are is]]
+            [eftest.runner :as eftr]))
+
+(def run-tests (fn [tests] (eftr/run-tests tests
+                                           {:report eftest.report.pretty/report
+                                            :multithread? false})))
+;; @@
+
+;; **
+;;; 
+;; **
+
+;; **
+;;; ## 
+;; **
+
+;; **
+;;; Some sections, such as 2.2 and 2.2.1 are not applicable for this library, since they are not numeric in nature. Many examples from the book directly apply to Clojure maps, which makes sense, but is not of interest for numerical computations. Such discussions have been skipped here.
+;; **
+
+;; **
+;;; ## 2.1 What is a Vector?
+;; **
+
+;; @@
+(deftest coding-the-matrix-21
+  "2.1 What is a Vector?"
+  (let [v (dv 3.14159 2.718281828 -1.0 2.0)]
+    (is (= (dim v) 4))
+    (is (= (vctr? v) true))
+
+    (is (= (ifn? v) true))
+    (is (= (v 0) (entry v 0)))
+    (is (= (v 1) (entry v 1)))
+    (is (= (v 2) (entry v 2)))
+    (is (= (v 3) (entry v 3)))))
+
+(run-tests [#'coding-the-matrix-21])
+
+;; @@
+
+;; **
+;;; ## 2.4 Translation and Vector addition
+;; **
+
+;; **
+;;; 
+;; **
+
+;; @@
+(deftest coding-the-matrix-24
+  (testing "2.4.1. Translation and Vector addition."
+    (let [trans-vector (dv [1 2])
+          translate (fn [x] (axpy! trans-vector x))]
+      (is (= (translate (dv 4 4)) (dv 5 6)))
+      (is (= (translate (dv -4 -4)) (dv -3 -2)))
+
+      (is (= (dv 2) (dv 0 0)))
+
+      (is (= (axpy! (dv 2) (dv 4 4)) (dv 4 4)))
+      (is (= (axpy! (zero (dv 4 4)) (dv 4 4)) (dv 4 4)))))
+
+  (testing "2.4.2 Vector addition is associative and commutative"
+    (let [u (dv 1 2 3)
+          v (dv 10 20 30)
+          w (dv 100 200 300)]
+      (is (= (xpy (xpy u v) w) (xpy u (xpy v w))))
+      (is (= (xpy u v) (xpy v u))))))
+
+(run-tests [#'coding-the-matrix-24])
+;; @@
+
+;; **
+;;; ## 2.5. Scalar-Vector Multiplication
+;; **
+
+;; @@
+(deftest coding-the-matrix-25
+ (testing "2.5. Scalar-vector multiplication"
+ (is (= (ax 2 (dv 5 4 10)) (dv 10 8 20)))
+ (is (= (ax 2 (ax 3 (dv 1 2 3))) (ax (* 2 3) (dv 1 2 3))))
+ (is (= (take 3 (map #(ax (/ (double %) 10) (dv 3 2)) (range 11)))
+        [(dv 0 0) (dv 0.30000000000000004 0.2) (dv 0.6000000000000001 0.4)]))))
+
+(run-tests [#'coding-the-matrix-25])
+;; @@
+
+;; **
+;;; ## 2.6 Combining Vector Addition and Scalar Multiplication
+;; **
+
+;; @@
+(deftest coding-the-matrix-26
+(testing "2.6 Combining vector addition and scalar multiplication"
+ (is (= (ax 2 (xpy (dv 1 2 3) (dv 3 4 4))) (xpy (ax 2 (dv 1 2 3)) (ax 2 (dv 3 4 4)))))
+ (is (= (ax (+ 2 3) (dv 1 2 3)) (xpy (ax 2 (dv 1 2 3)) (ax 3 (dv 1 2 3))))))
+
+(testing "2.6.3 First look at convex combinations"
+ (let [u1 (dv 2.0)
+       v1 (dv 12.0)
+       u2 (dv 5 2)
+       v2 (dv 10 -6)
+       ab [[1 0] [0.75 0.25] [0.5 0.5] [0.25 0.75] [0 1]]]
+   (is (= (map (fn [[alpha beta]] (axpy alpha u1 beta v1)) ab)
+          [(dv 2.0) (dv 4.5) (dv 7.0) (dv 9.5) (dv 12.0)]))
+   (is (= (map (fn [[alpha beta]] (axpy alpha u2 beta v2)) ab)
+       [(dv 5 2) (dv 6.25 0) (dv 7.5 -2) (dv 8.75 -4) (dv 10 -6)])))))
+
+(run-tests [#'coding-the-matrix-26])
+;; @@
+
+;; **
+;;; ## 2.7 Vector negative, Invertibility of Vector Addition and Vector Subtraction
+;; **
+
+;; @@
+(deftest coding-the-matrix-27
+ (testing "2.7.4 Vector negative, invertibility of vector addition,"
+ "and vector subtraction"
+ (let [w (dv 3 4)
+       f (fn [v] (xpy v w))
+       g (fn [v] (axpy! -1 w (copy v)))]
+   (is (= ((comp f g) (dv 2 3)) (dv 2 3))))))
+
+(run-tests [#'coding-the-matrix-27])
+;; @@
+
+;; **
+;;; ## 2.9 Dot-Product
+;; **
+
+;; @@
+(deftest coding-the-matrix-29
+ (testing "2.9 Dot-product"
+ (is (= (dot (dv 1 1 1 1 1) (dv 10 20 0 40 -100)) -30.0))
+
+ (let [cost (dv 2.5 1.5 0.006 0.45)
+       quantity (dv 6 14 7 11)
+       value (dv 0 960 0 3.25)]
+   (is (= (dot cost quantity) 40.992))
+   (is (= (dot value quantity) 13475.75)))
+
+ (let [haystack (dv 1 -1 1 1 1 -1 1 1 1)
+       needle (dv 1 -1 1 1 -1 1)]
+   (is (= (map #(dot (subvector haystack % (dim needle)) needle) (range (inc (- (dim haystack) (dim needle)))))
+       [2.0 2.0 0.0 0.0]))))
+
+ (testing "2.9.8 Algebraic properties of the dot product"
+ (let [u (dv 1 2 3)
+       v (dv 4 5 6)
+       w (dv 7 8 9)]
+   (is (= (dot u v) (dot v u)))
+   (is (= (dot (ax 7 u) v) (* 7 (dot u v))))
+   (is (= (dot (xpy u v) w) (+ (dot u w) (dot v w)))))))
+
+(run-tests [#'coding-the-matrix-29])
+;; @@
+
+;; **
+;;; ## 2.10 Printing Vectors
+;; **
+
+;; @@
+(deftest coding-the-matrix-210
+(testing "2.10.4 Printing vectors"
+       (is (= (pr-str (dv 2 3 4)) "#RealBlockVector[double, n:3, offset: 0, stride:1]\n[   2.00    3.00    4.00 ]\n"))))
+
+(run-tests [#'coding-the-matrix-210])
+;; @@
+
+;; **
+;;; ## 4.1 What is a Matrix
+;; **
+
+;; @@
+(deftest coding-the-matrix-41
+  (testing "4.1 What is a matrix"
+    (let [m (dge 2 3 [1 10 2 20 3 30])]
+      (is (= (row m 0) (dv 1 2 3)))
+      (is (= (row m 1) (dv 10 20 30)))
+      (is (= (col m 0) (dv 1 10)))
+      (is (= (col m 1) (dv 2 20)))
+      (is (= (col m 2) (dv 3 30)))
+      (is (= (mrows m) 2))
+      (is (= (ncols m) 3))
+      (is (= (entry m 1 2) 30.0)))))
+
+(run-tests [#'coding-the-matrix-41])
+;; @@
+
+;; **
+;;; 
+;; **
